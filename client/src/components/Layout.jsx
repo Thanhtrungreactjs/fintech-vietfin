@@ -52,7 +52,7 @@ export default function Layout() {
       <aside className="flex w-64 flex-col border-r border-white/10 bg-[#0b0f0d] px-4 py-6">
         <div className="mb-8 flex items-center gap-2 px-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-black font-bold">₫</div>
-          <span className="text-lg font-semibold text-white">VietFin</span>
+          <span className="text-lg font-semibold text-white">Thành Trung Fintech</span>
         </div>
 
         <nav className="flex-1 space-y-1">

@@ -1,4 +1,4 @@
-# VietFin — Nền tảng Fintech đầy đủ chức năng
+# Thành Trung Fintech — Nền tảng Fintech đầy đủ chức năng
 
 Ứng dụng full-stack gồm 5 mô-đun nghiệp vụ: Ví điện tử, Cho vay ngang hàng (P2P Lending),
 Bảo hiểm (Insurtech), Ngân hàng số (Digital Banking) và Quản lý tài chính doanh nghiệp.

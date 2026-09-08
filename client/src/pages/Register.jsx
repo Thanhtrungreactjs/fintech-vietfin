@@ -29,7 +29,7 @@ export default function Register() {
       <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#101613] p-8">
         <div className="mb-6 flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-black font-bold">₫</div>
-          <span className="text-lg font-semibold text-white">VietFin</span>
+          <span className="text-lg font-semibold text-white">Thành Trung Fintech</span>
         </div>
         <h1 className="mb-1 text-xl font-semibold text-white">Tạo tài khoản</h1>
         <p className="mb-6 text-sm text-gray-400">Mở tài khoản ngân hàng số miễn phí.</p>

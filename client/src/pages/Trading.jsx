@@ -98,8 +98,8 @@ export default function Trading() {
         thanh toán hiển thị bằng VND chỉ là quy đổi mô phỏng, không phải tỷ giá thật.
       </Alert>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+        <div className="space-y-4 lg:col-span-3">
           <Card>
             <form onSubmit={applySymbol} className="mb-4 flex flex-wrap items-center gap-2">
               <Input
@@ -131,7 +131,7 @@ export default function Trading() {
                 ))}
               </div>
             </form>
-            <TradingViewChart symbol={symbol} />
+            <TradingViewChart symbol={symbol} height={720} />
           </Card>
 
           <Card>
