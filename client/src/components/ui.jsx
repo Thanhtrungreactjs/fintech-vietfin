@@ -59,6 +59,27 @@ export function Input({ label, className = "", ...props }) {
   );
 }
 
+// Displays the numeric value grouped with commas (e.g. 50,000,000) while
+// typing, but reports the raw digit string to onChange so callers keep
+// working with a plain number.
+export function AmountInput({ label, value, onChange, className = "", ...props }) {
+  const display = value === "" || value === undefined || value === null ? "" : Number(value).toLocaleString("en-US");
+  return (
+    <label className="block">
+      {label && <span className="mb-1.5 block text-sm text-gray-400">{label}</span>}
+      <input
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        value={display}
+        onChange={(e) => onChange(e.target.value.replace(/[^0-9]/g, ""))}
+        className={`w-full rounded-xl border border-white/10 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-emerald-500/60 ${className}`}
+        {...props}
+      />
+    </label>
+  );
+}
+
 export function Select({ label, children, className = "", ...props }) {
   return (
     <label className="block">

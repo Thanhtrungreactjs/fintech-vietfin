@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 import api from "../api/client";
+import { useAuth } from "../context/AuthContext";
 import { formatVND, formatDateTime } from "../lib/format";
-import { Card, SectionTitle, Button, Input, Select, Badge, EmptyState, Alert, Modal } from "../components/ui";
-import { ArrowDownCircle, ArrowUpCircle, Send, Wallet as WalletIcon } from "lucide-react";
+import { Card, SectionTitle, Button, Input, AmountInput, Select, Badge, EmptyState, Alert, Modal } from "../components/ui";
+import { ArrowDownCircle, ArrowUpCircle, Send, Wallet as WalletIcon, QrCode } from "lucide-react";
+
+// Real bank account used to demo top-up / withdrawal via VietQR (NAPAS BIN 970423 = TPBank).
+const BANK = { bin: "970423", name: "TPBank (Ngân hàng TMCP Tiên Phong)", accountNumber: "12311111111" };
 
 const TX_LABELS = {
   DEPOSIT: "Nạp tiền",
@@ -21,7 +25,44 @@ function genKey() {
   return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
 }
 
+function BankTransferCard({ amount, note, hint }) {
+  const params = new URLSearchParams();
+  if (amount) params.set("amount", String(amount));
+  if (note) params.set("addInfo", note);
+  const qs = params.toString();
+  const qrSrc = `https://img.vietqr.io/image/${BANK.bin}-${BANK.accountNumber}-compact2.png${qs ? `?${qs}` : ""}`;
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+      <div className="mb-3 flex items-center gap-2 text-sm font-medium text-white">
+        <QrCode size={16} className="text-emerald-400" /> Quét mã VietQR
+      </div>
+      <div className="flex gap-4">
+        <img src={qrSrc} alt="Mã QR chuyển khoản" className="h-36 w-36 shrink-0 rounded-lg bg-white p-1.5" />
+        <div className="flex-1 space-y-1.5 text-sm">
+          <div>
+            <p className="text-xs text-gray-500">Ngân hàng</p>
+            <p className="text-white">{BANK.name}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Số tài khoản</p>
+            <p className="font-mono text-white">{BANK.accountNumber}</p>
+          </div>
+          {amount > 0 && (
+            <div>
+              <p className="text-xs text-gray-500">Số tiền</p>
+              <p className="text-white">{formatVND(amount)}</p>
+            </div>
+          )}
+        </div>
+      </div>
+      <p className="mt-3 text-xs text-gray-500">{hint}</p>
+    </div>
+  );
+}
+
 export default function WalletPage() {
+  const { user } = useAuth();
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [filters, setFilters] = useState({ type: "", status: "" });
@@ -188,14 +229,27 @@ export default function WalletPage() {
               onChange={(e) => setForm({ ...form, toEmail: e.target.value })}
             />
           )}
-          <Input
+          <AmountInput
             label="Số tiền (VND)"
-            type="number"
-            min="1000"
             required
+            placeholder="0"
             value={form.amount}
-            onChange={(e) => setForm({ ...form, amount: e.target.value })}
+            onChange={(digits) => setForm({ ...form, amount: digits })}
           />
+          {modal === "deposit" && (
+            <BankTransferCard
+              amount={Number(form.amount) || 0}
+              note={`NAPTIEN ${user?.fullName || ""}`.trim()}
+              hint='Chuyển khoản đúng số tiền và nội dung ở trên, sau đó bấm "Xác nhận" để cập nhật số dư ví.'
+            />
+          )}
+          {modal === "withdraw" && (
+            <BankTransferCard
+              amount={Number(form.amount) || 0}
+              note={`RUTTIEN ${user?.fullName || ""}`.trim()}
+              hint="Tiền rút sẽ được chuyển về tài khoản ngân hàng liên kết này sau khi yêu cầu được xử lý."
+            />
+          )}
           {(modal === "withdraw" || modal === "transfer") && (
             <Select label="Danh mục chi tiêu" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
               {CATEGORIES.map((c) => (
