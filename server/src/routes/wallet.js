@@ -64,6 +64,9 @@ router.get("/transactions", requireAuth, async (req, res) => {
   const transactions = await prisma.transaction.findMany({
     where,
     orderBy: { createdAt: "desc" },
+    include: {
+      counterpartyWallet: { include: { user: { select: { fullName: true, email: true } } } },
+    },
   });
   res.json({ transactions });
 });

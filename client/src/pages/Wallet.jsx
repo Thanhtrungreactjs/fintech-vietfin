@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { getSocket } from "../lib/socket";
 import { formatVND, formatDateTime } from "../lib/format";
 import { Card, SectionTitle, Button, Input, AmountInput, Select, Badge, EmptyState, Alert, Modal } from "../components/ui";
-import { ArrowDownCircle, ArrowUpCircle, Send, Wallet as WalletIcon, QrCode, Loader2 } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Send, Wallet as WalletIcon, QrCode, Loader2, Copy, Check } from "lucide-react";
 
 // Real bank account used to demo top-up / withdrawal via VietQR (NAPAS BIN 970423 = TPBank).
 const BANK = { bin: "970423", name: "TPBank (Ngân hàng TMCP Tiên Phong)", accountNumber: "12311111111" };
@@ -66,6 +66,71 @@ function BankTransferCard({ amount, note, hint }) {
   );
 }
 
+const STATUS_LABEL = { COMPLETED: "Hoàn tất", FAILED: "Thất bại" };
+
+function DetailRow({ label, children }) {
+  return (
+    <div className="flex items-center justify-between border-b border-white/5 py-2.5 text-sm last:border-0">
+      <span className="text-gray-500">{label}</span>
+      <span className="text-right text-white">{children}</span>
+    </div>
+  );
+}
+
+function CopyableCode({ value }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      className="inline-flex items-center gap-1.5 font-mono text-xs text-gray-300 hover:text-emerald-400"
+      onClick={() => {
+        navigator.clipboard?.writeText(value);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }}
+    >
+      {value}
+      {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+    </button>
+  );
+}
+
+function TransactionDetail({ tx }) {
+  const isCredit = CREDIT_TYPES.includes(tx.type);
+  const counterpartyUser = tx.counterpartyWallet?.user;
+  return (
+    <div>
+      <div className="mb-4 text-center">
+        <p className={`text-2xl font-semibold ${isCredit ? "text-emerald-400" : "text-red-400"}`}>
+          {isCredit ? "+" : "-"}
+          {formatVND(tx.amount)}
+        </p>
+        <Badge tone={tx.status === "COMPLETED" ? "green" : "red"}>{STATUS_LABEL[tx.status] || tx.status}</Badge>
+      </div>
+      <div>
+        <DetailRow label="Mã giao dịch">
+          <CopyableCode value={tx.id} />
+        </DetailRow>
+        <DetailRow label="Loại giao dịch">{TX_LABELS[tx.type] || tx.type}</DetailRow>
+        <DetailRow label="Thời gian">{formatDateTime(tx.createdAt)}</DetailRow>
+        <DetailRow label="Danh mục">{tx.category}</DetailRow>
+        {counterpartyUser && (
+          <DetailRow label={tx.type === "TRANSFER_OUT" ? "Chuyển đến" : "Nhận từ"}>
+            {counterpartyUser.fullName} ({counterpartyUser.email})
+          </DetailRow>
+        )}
+        <DetailRow label="Số dư sau giao dịch">{formatVND(tx.balanceAfter)}</DetailRow>
+        {tx.description && <DetailRow label="Ghi chú">{tx.description}</DetailRow>}
+        {tx.idempotencyKey && (
+          <DetailRow label="Mã tham chiếu">
+            <CopyableCode value={tx.idempotencyKey} />
+          </DetailRow>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function WalletPage() {
   const { user } = useAuth();
   const [wallet, setWallet] = useState(null);
@@ -76,6 +141,7 @@ export default function WalletPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [topupIntent, setTopupIntent] = useState(null);
+  const [selectedTx, setSelectedTx] = useState(null);
 
   const loadWallet = async () => {
     const { data } = await api.get("/wallet");
@@ -228,7 +294,11 @@ export default function WalletPage() {
               </thead>
               <tbody className="divide-y divide-white/5">
                 {transactions.map((tx) => (
-                  <tr key={tx.id}>
+                  <tr
+                    key={tx.id}
+                    onClick={() => setSelectedTx(tx)}
+                    className="cursor-pointer hover:bg-white/5"
+                  >
                     <td className="py-3 pr-4 text-white">{TX_LABELS[tx.type] || tx.type}</td>
                     <td
                       className={`py-3 pr-4 font-medium ${
@@ -321,6 +391,10 @@ export default function WalletPage() {
             </p>
           )}
         </form>
+      </Modal>
+
+      <Modal open={!!selectedTx} onClose={() => setSelectedTx(null)} title="Chi tiết giao dịch">
+        {selectedTx && <TransactionDetail tx={selectedTx} />}
       </Modal>
     </div>
   );
