@@ -274,3 +274,12 @@ model TradingOrder {
   realizedPnl Float?  // only set on SELL orders that reduce/close a position
   createdAt   DateTime @default(now())
 }
+
+// Generic key-value store for admin-editable app configuration (e.g. the
+// bank account that receives real deposits) so it can be changed from a
+// settings screen instead of editing server/.env and restarting the server.
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

@@ -87,7 +87,7 @@ export default function Layout() {
             }
           >
             <UserCircle size={18} />
-            Hồ sơ &amp; KYC
+            Hồ sơ &amp; Cài đặt
           </NavLink>
           <button
             onClick={() => {

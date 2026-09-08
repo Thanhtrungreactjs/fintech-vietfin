@@ -81,6 +81,20 @@ router.get("/me", requireAuth, async (req, res) => {
   res.json({ user: publicUser(user) });
 });
 
+router.patch("/me", requireAuth, async (req, res) => {
+  const { fullName, phone } = req.body;
+  if (!fullName || !fullName.trim()) {
+    return res.status(400).json({ error: "Họ và tên không được để trống" });
+  }
+
+  const user = await prisma.user.update({
+    where: { id: req.userId },
+    data: { fullName: fullName.trim(), phone: phone?.trim() || null },
+    include: { kyc: true, wallet: true },
+  });
+  res.json({ user: publicUser(user) });
+});
+
 router.post("/kyc", requireAuth, async (req, res) => {
   const { idType, idNumber, dob, address } = req.body;
   if (!idType || !idNumber || !dob || !address) {
