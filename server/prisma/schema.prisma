@@ -30,6 +30,7 @@ model User {
   ledgerEntries  LedgerEntry[]
   budgets        Budget[]
   termDeposits   TermDeposit[]
+  topUpIntents   TopUpIntent[]
 }
 
 model KycDocument {
@@ -193,4 +194,18 @@ model TermDeposit {
   settledAt    DateTime?
   interestPaid Float?
   createdAt    DateTime  @default(now())
+}
+
+// A pending real-money top-up request: the unique `code` is embedded in the
+// VietQR transfer content so an incoming-payment webhook (e.g. SePay) can be
+// matched back to the user who requested it and auto-credit their wallet.
+model TopUpIntent {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  code        String    @unique
+  status      String    @default("PENDING") // PENDING | COMPLETED | EXPIRED
+  matchedTxId String?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
 }

@@ -39,6 +39,37 @@ Mở `http://localhost:5173`, đăng ký tài khoản mới để bắt đầu.
   ngân sách cá nhân theo danh mục chi tiêu với cảnh báo vượt hạn mức.
 - **Tài chính doanh nghiệp**: sổ cái tự động ghi nhận thu/chi từ mọi mô-đun, dự báo dòng tiền
   dựa trên lịch trả nợ và hoá đơn sắp đến hạn, hoá đơn điện tử, báo cáo tài chính theo tháng.
+- **Tiết kiệm & Đầu tư tiền gửi**: gửi tiết kiệm có kỳ hạn (1-36 tháng) với lãi suất cố định,
+  xem trước lãi dự kiến, tất toán đến hạn hoặc trước hạn (tự động áp lãi suất không kỳ hạn thấp
+  hơn khi tất toán sớm).
+- **Tự động cộng tiền khi chuyển khoản thật** (nạp tiền qua VietQR + webhook SePay + WebSocket):
+  xem hướng dẫn kết nối bên dưới.
+
+## Kết nối nạp tiền tự động qua chuyển khoản ngân hàng thật
+
+Khi bấm "Nạp tiền", hệ thống tạo một mã giao dịch duy nhất (VD: `NAPX7K9F2`) và nhúng vào nội
+dung chuyển khoản trên mã VietQR. Để ví **tự động cộng tiền** ngay khi có chuyển khoản thật vào
+tài khoản TPBank (không cần bấm gì), cần nối một dịch vụ đọc biến động số dư ngân hàng gửi
+webhook về server — vì bản thân app không có quyền truy cập trực tiếp hệ thống ngân hàng.
+
+1. Đăng ký tài khoản tại [sepay.vn](https://sepay.vn) (miễn phí cho cá nhân) và liên kết tài
+   khoản TPBank `12311111111`.
+2. Trong SePay, tạo một **Webhook** mới: chọn loại sự kiện "Tiền vào", trỏ URL webhook về
+   `https://<địa-chỉ-public-của-server>/api/webhooks/sepay`, chọn xác thực kiểu **API Key**.
+   - Vì server chạy `localhost:4000` khi phát triển, SePay (chạy trên internet) không gọi vào
+     `localhost` được — cần deploy server lên một domain public, hoặc dùng `ngrok http 4000`
+     để có URL tạm public trỏ vào máy đang chạy.
+3. Copy API Key mà SePay tạo ra, dán vào `server/.env`:
+   ```
+   SEPAY_API_KEY=<api-key-từ-sepay>
+   ```
+4. Khởi động lại server. Từ lúc này, mỗi khi có tiền chuyển vào tài khoản với đúng mã giao dịch
+   trong nội dung chuyển khoản, server sẽ tự động: cộng tiền vào đúng ví người dùng, ghi giao
+   dịch vào sao kê, ghi thu nhập vào sổ kế toán, và đẩy real-time (WebSocket) để giao diện cập
+   nhật số dư + hiện thông báo ngay lập tức — không cần người dùng bấm "Xác nhận".
+
+Trong lúc chưa cấu hình SePay, nút "Mô phỏng: đã nhận được tiền (dev)" trong modal nạp tiền vẫn
+dùng để giả lập nhận tiền khi test/demo.
 
 ## Ghi chú kỹ thuật
 

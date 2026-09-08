@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Wallet, HandCoins, ShieldCheck, Building2, PiggyBank, LogOut, UserCircle } from "lucide-react";
+import { LayoutDashboard, Wallet, HandCoins, ShieldCheck, Building2, PiggyBank, LogOut, UserCircle, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { getSocket } from "../lib/socket";
+import { formatVND } from "../lib/format";
 
 const navItems = [
   { to: "/", label: "Tổng quan", icon: LayoutDashboard, end: true },
@@ -14,6 +17,34 @@ const navItems = [
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    let socket = null;
+
+    const onCredited = (payload) => {
+      setToast(`Đã nhận ${formatVND(payload.transaction.amount)} vào ví qua chuyển khoản ngân hàng!`);
+      setTimeout(() => setToast(null), 6000);
+    };
+
+    // AuthProvider (an ancestor) connects the socket in its own effect, which
+    // may run after this one — poll briefly until it's available.
+    const attach = () => {
+      socket = getSocket();
+      if (socket) {
+        socket.on("wallet:credited", onCredited);
+      } else if (!cancelled) {
+        setTimeout(attach, 300);
+      }
+    };
+    attach();
+
+    return () => {
+      cancelled = true;
+      if (socket) socket.off("wallet:credited", onCredited);
+    };
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-[#080b09] text-gray-200">
@@ -84,6 +115,13 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-[#0e1310] px-4 py-3 text-sm text-white shadow-xl">
+          <CheckCircle2 size={18} className="shrink-0 text-emerald-400" />
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

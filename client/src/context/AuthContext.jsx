@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import api from "../api/client";
+import { connectSocket, disconnectSocket } from "../lib/socket";
 
 const AuthContext = createContext(null);
 
@@ -28,6 +29,15 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     refreshUser();
   }, [refreshUser]);
+
+  useEffect(() => {
+    if (user) {
+      connectSocket(localStorage.getItem("fintech_token"));
+    } else {
+      disconnectSocket();
+    }
+    return () => disconnectSocket();
+  }, [user?.id]);
 
   const login = async (email, password) => {
     const { data } = await api.post("/auth/login", { email, password });

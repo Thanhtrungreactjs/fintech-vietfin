@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { getSocket } from "../lib/socket";
 import { formatVND, formatDateTime } from "../lib/format";
 import { Card, SectionTitle, Button, Input, AmountInput, Select, Badge, EmptyState, Alert, Modal } from "../components/ui";
-import { ArrowDownCircle, ArrowUpCircle, Send, Wallet as WalletIcon, QrCode } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Send, Wallet as WalletIcon, QrCode, Loader2 } from "lucide-react";
 
 // Real bank account used to demo top-up / withdrawal via VietQR (NAPAS BIN 970423 = TPBank).
 const BANK = { bin: "970423", name: "TPBank (Ngân hàng TMCP Tiên Phong)", accountNumber: "12311111111" };
@@ -74,6 +75,7 @@ export default function WalletPage() {
   const [form, setForm] = useState({ amount: "", toEmail: "", category: "Khác", description: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [topupIntent, setTopupIntent] = useState(null);
 
   const loadWallet = async () => {
     const { data } = await api.get("/wallet");
@@ -97,10 +99,43 @@ export default function WalletPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
-  const openModal = (type) => {
+  // When a real bank transfer lands and the SePay webhook matches it, the
+  // server pushes this event so the balance/history update with no refresh
+  // and, if the deposit QR is still open, it closes automatically.
+  useEffect(() => {
+    let cancelled = false;
+    let socket = null;
+    const onCredited = () => {
+      loadWallet();
+      loadTransactions();
+      setModal((current) => (current === "deposit" ? null : current));
+    };
+    const attach = () => {
+      socket = getSocket();
+      if (socket) socket.on("wallet:credited", onCredited);
+      else if (!cancelled) setTimeout(attach, 300);
+    };
+    attach();
+    return () => {
+      cancelled = true;
+      if (socket) socket.off("wallet:credited", onCredited);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const openModal = async (type) => {
     setForm({ amount: "", toEmail: "", category: "Khác", description: "" });
     setError("");
+    setTopupIntent(null);
     setModal(type);
+    if (type === "deposit") {
+      try {
+        const { data } = await api.post("/wallet/topup-intent");
+        setTopupIntent(data.intent);
+      } catch {
+        // Fine to continue without a code — QR falls back to the generic note.
+      }
+    }
   };
 
   const submit = async (e) => {
@@ -241,11 +276,19 @@ export default function WalletPage() {
             onChange={(digits) => setForm({ ...form, amount: digits })}
           />
           {modal === "deposit" && (
-            <BankTransferCard
-              amount={Number(form.amount) || 0}
-              note={`NAPTIEN ${user?.fullName || ""}`.trim()}
-              hint='Chuyển khoản đúng số tiền và nội dung ở trên, sau đó bấm "Xác nhận" để cập nhật số dư ví.'
-            />
+            <>
+              <BankTransferCard
+                amount={Number(form.amount) || 0}
+                note={topupIntent?.code || `NAPTIEN ${user?.fullName || ""}`.trim()}
+                hint="Chuyển khoản đúng số tiền và giữ nguyên nội dung ở trên — hệ thống sẽ tự động cộng tiền vào ví khi ngân hàng báo có."
+              />
+              {topupIntent && (
+                <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3.5 py-2.5 text-xs text-emerald-400">
+                  <Loader2 size={14} className="animate-spin" />
+                  Đang chờ tiền về tự động qua chuyển khoản (mã: {topupIntent.code})...
+                </div>
+              )}
+            </>
           )}
           {modal === "withdraw" && (
             <BankTransferCard
@@ -270,8 +313,13 @@ export default function WalletPage() {
           />
           {error && <Alert>{error}</Alert>}
           <Button type="submit" className="w-full" disabled={busy}>
-            {busy ? "Đang xử lý..." : "Xác nhận"}
+            {busy ? "Đang xử lý..." : modal === "deposit" ? "Mô phỏng: đã nhận được tiền (dev)" : "Xác nhận"}
           </Button>
+          {modal === "deposit" && (
+            <p className="text-center text-xs text-gray-500">
+              Nút trên chỉ dùng để giả lập khi test — khi có webhook SePay thật, ví sẽ tự cộng tiền không cần bấm gì.
+            </p>
+          )}
         </form>
       </Modal>
     </div>

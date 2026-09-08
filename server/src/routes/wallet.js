@@ -16,6 +16,38 @@ router.get("/", requireAuth, async (req, res) => {
   res.json({ wallet });
 });
 
+// Ambiguity-avoiding alphabet (no 0/O, 1/I) so a hand-typed or bank-mangled
+// transfer memo still matches unambiguously.
+const CODE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+function generateTopUpCode() {
+  let code = "NAP";
+  for (let i = 0; i < 6; i++) code += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  return code;
+}
+
+// Creates a pending top-up request with a unique code to embed in a VietQR
+// transfer memo, so the SePay webhook can later match an incoming bank
+// transaction back to this user and auto-credit their wallet.
+router.post("/topup-intent", requireAuth, async (req, res) => {
+  let code;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    code = generateTopUpCode();
+    const clash = await prisma.topUpIntent.findUnique({ where: { code } });
+    if (!clash) break;
+    code = null;
+  }
+  if (!code) return res.status(500).json({ error: "Không thể tạo mã giao dịch, vui lòng thử lại" });
+
+  const intent = await prisma.topUpIntent.create({ data: { userId: req.userId, code } });
+  res.status(201).json({ intent });
+});
+
+router.get("/topup-intent/:id", requireAuth, async (req, res) => {
+  const intent = await prisma.topUpIntent.findFirst({ where: { id: req.params.id, userId: req.userId } });
+  if (!intent) return res.status(404).json({ error: "Không tìm thấy yêu cầu nạp tiền" });
+  res.json({ intent });
+});
+
 router.get("/transactions", requireAuth, async (req, res) => {
   const wallet = await getWalletOrThrow(req.userId);
   const { type, status, from, to } = req.query;
