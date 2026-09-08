@@ -20,9 +20,11 @@ const TX_LABELS = {
   INSURANCE_PAYOUT: "Bồi thường bảo hiểm",
   DEPOSIT_LOCK: "Gửi tiết kiệm",
   DEPOSIT_SETTLEMENT: "Tất toán tiết kiệm",
+  TRADE_BUY: "Mua tài sản (trading)",
+  TRADE_SELL: "Bán tài sản (trading)",
 };
 
-const CREDIT_TYPES = ["DEPOSIT", "TRANSFER_IN", "LOAN_DISBURSEMENT", "INSURANCE_PAYOUT", "DEPOSIT_SETTLEMENT"];
+const CREDIT_TYPES = ["DEPOSIT", "TRANSFER_IN", "LOAN_DISBURSEMENT", "INSURANCE_PAYOUT", "DEPOSIT_SETTLEMENT", "TRADE_SELL"];
 
 const CATEGORIES = ["Ăn uống", "Di chuyển", "Mua sắm", "Hoá đơn", "Giải trí", "Khác"];
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Wallet, HandCoins, ShieldCheck, Building2, PiggyBank, LogOut, UserCircle, CheckCircle2 } from "lucide-react";
+import { LayoutDashboard, Wallet, HandCoins, ShieldCheck, Building2, PiggyBank, LineChart, LogOut, UserCircle, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { getSocket } from "../lib/socket";
 import { formatVND } from "../lib/format";
@@ -12,6 +12,7 @@ const navItems = [
   { to: "/lending", label: "Cho vay P2P", icon: HandCoins },
   { to: "/insurance", label: "Bảo hiểm", icon: ShieldCheck },
   { to: "/corporate", label: "Tài chính DN", icon: Building2 },
+  { to: "/trading", label: "Trading", icon: LineChart },
 ];
 
 export default function Layout() {

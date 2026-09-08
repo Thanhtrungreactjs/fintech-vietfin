@@ -12,6 +12,7 @@ import LoanDetail from "./pages/LoanDetail";
 import Insurance from "./pages/Insurance";
 import PolicyDetail from "./pages/PolicyDetail";
 import Corporate from "./pages/Corporate";
+import Trading from "./pages/Trading";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -50,6 +51,7 @@ export default function App() {
             <Route path="insurance" element={<Insurance />} />
             <Route path="insurance/:id" element={<PolicyDetail />} />
             <Route path="corporate" element={<Corporate />} />
+            <Route path="trading" element={<Trading />} />
             <Route path="profile" element={<Profile />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

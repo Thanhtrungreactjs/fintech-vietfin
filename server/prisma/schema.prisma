@@ -31,6 +31,8 @@ model User {
   budgets        Budget[]
   termDeposits   TermDeposit[]
   topUpIntents   TopUpIntent[]
+  tradingPositions TradingPosition[]
+  tradingOrders    TradingOrder[]
 }
 
 model KycDocument {
@@ -163,7 +165,7 @@ model LedgerEntry {
   id          String   @id @default(uuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id])
-  source      String // WALLET | LOAN | INSURANCE | INVOICE | DEPOSIT
+  source      String // WALLET | LOAN | INSURANCE | INVOICE | DEPOSIT | TRADING
   sourceRefId String?
   type        String // INCOME | EXPENSE
   amount      Float
@@ -208,4 +210,33 @@ model TopUpIntent {
   matchedTxId String?
   createdAt   DateTime  @default(now())
   completedAt DateTime?
+}
+
+// Simulated ("paper") trading: no real asset custody or exchange order is
+// ever placed — buys/sells are matched instantly against a live reference
+// price and settled against the user's own VND wallet balance.
+model TradingPosition {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  symbol        String // e.g. BTCUSDT
+  quantity      Float
+  avgEntryPrice Float
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, symbol])
+}
+
+model TradingOrder {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  symbol      String
+  side        String // BUY | SELL
+  quantity    Float
+  price       Float
+  amount      Float // quantity * price, in VND
+  realizedPnl Float?  // only set on SELL orders that reduce/close a position
+  createdAt   DateTime @default(now())
 }

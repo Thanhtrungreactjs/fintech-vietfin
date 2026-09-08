@@ -13,6 +13,7 @@ const bankingRoutes = require("./routes/banking");
 const corporateRoutes = require("./routes/corporate");
 const depositsRoutes = require("./routes/deposits");
 const webhooksRoutes = require("./routes/webhooks");
+const tradingRoutes = require("./routes/trading");
 
 const app = express();
 app.use(cors());
@@ -28,6 +29,7 @@ app.use("/api/banking", bankingRoutes);
 app.use("/api/corporate", corporateRoutes);
 app.use("/api/deposits", depositsRoutes);
 app.use("/api/webhooks", webhooksRoutes);
+app.use("/api/trading", tradingRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
