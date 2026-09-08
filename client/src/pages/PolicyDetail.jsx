@@ -4,6 +4,8 @@ import api from "../api/client";
 import { formatVND, formatDate } from "../lib/format";
 import { Card, SectionTitle, Button, Input, Badge, Alert, Modal, EmptyState } from "../components/ui";
 import { ArrowLeft } from "lucide-react";
+import InsurerLogo from "../components/InsurerLogo";
+import { CATEGORY_FIELDS } from "../lib/insuranceFields";
 
 const STATUS_TONE = { ACTIVE: "green", CANCELLED: "red", EXPIRED: "gray" };
 const CLAIM_TONE = { SUBMITTED: "yellow", UNDER_REVIEW: "blue", APPROVED: "blue", REJECTED: "red", PAID: "green" };
@@ -68,12 +70,27 @@ export default function PolicyDetail() {
 
       <Card>
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-white">{policy.plan.name}</h1>
-            <p className="text-sm text-gray-400">{subject.description}</p>
+          <div className="flex items-center gap-3">
+            <InsurerLogo src={policy.plan.insurerLogo} name={policy.plan.insurer} size="h-11 w-11" />
+            <div>
+              <h1 className="text-xl font-semibold text-white">{policy.plan.name}</h1>
+              <p className="text-sm text-gray-400">{policy.plan.insurer}</p>
+            </div>
           </div>
           <Badge tone={STATUS_TONE[policy.status]}>{policy.status}</Badge>
         </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-3 rounded-xl border border-white/10 p-4 sm:grid-cols-2">
+          {(CATEGORY_FIELDS[policy.plan.category] || []).map((f) =>
+            subject[f.key] ? (
+              <div key={f.key}>
+                <p className="text-xs text-gray-500">{f.label}</p>
+                <p className="text-sm text-white">{f.type === "date" ? formatDate(subject[f.key]) : subject[f.key]}</p>
+              </div>
+            ) : null
+          )}
+        </div>
+
         <div className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
           <div>
             <p className="text-gray-500">Số tiền bảo hiểm</p>

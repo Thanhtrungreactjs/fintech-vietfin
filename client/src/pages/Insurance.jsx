@@ -6,6 +6,7 @@ import { Card, SectionTitle, Button, Input, Select, Badge, EmptyState, Alert, Mo
 import { ShieldCheck, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { CATEGORY_FIELDS, emptySubjectInfo } from "../lib/insuranceFields";
+import InsurerLogo from "../components/InsurerLogo";
 
 const CATEGORY_LABEL = { HEALTH: "Sức khoẻ", VEHICLE: "Phương tiện", HOME: "Nhà ở", TRAVEL: "Du lịch", LIFE: "Nhân thọ" };
 const STATUS_TONE = { ACTIVE: "green", CANCELLED: "red", EXPIRED: "gray" };
@@ -113,9 +114,7 @@ export default function Insurance() {
           {plans.map((p) => (
             <div key={p.id} className="flex flex-col rounded-xl border border-white/10 p-4">
               <div className="mb-2 flex items-center gap-2">
-                {p.insurerLogo && (
-                  <img src={p.insurerLogo} alt={p.insurer} className="h-8 w-8 rounded-lg bg-white object-contain p-1" />
-                )}
+                <InsurerLogo src={p.insurerLogo} name={p.insurer} size="h-9 w-9" />
                 <div>
                   <p className="text-xs uppercase tracking-wide text-emerald-400">{CATEGORY_LABEL[p.category]}</p>
                   <p className="text-xs text-gray-500">{p.insurer}</p>
@@ -162,13 +161,7 @@ export default function Insurance() {
                 className="flex items-center justify-between py-4 text-sm hover:bg-white/5 rounded-lg px-2 -mx-2"
               >
                 <div className="flex items-center gap-3">
-                  {pol.plan.insurerLogo && (
-                    <img
-                      src={pol.plan.insurerLogo}
-                      alt={pol.plan.insurer}
-                      className="h-8 w-8 shrink-0 rounded-lg bg-white object-contain p-1"
-                    />
-                  )}
+                  <InsurerLogo src={pol.plan.insurerLogo} name={pol.plan.insurer} size="h-9 w-9" />
                   <div>
                     <p className="font-medium text-white">{pol.plan.name}</p>
                     <p className="text-xs text-gray-500">
