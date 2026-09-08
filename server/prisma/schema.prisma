@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// NOTE: status/type fields use String instead of native enum so this schema
+// stays portable between SQLite (dev) and PostgreSQL (production) — Prisma's
+// SQLite connector does not support native enums. Allowed values are listed
+// in comments next to each field.
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  phone        String?
+  role         String   @default("PERSONAL") // PERSONAL | BUSINESS
+  kycStatus    String   @default("UNVERIFIED") // UNVERIFIED | PENDING | VERIFIED | REJECTED
+  createdAt    DateTime @default(now())
+
+  kyc            KycDocument?
+  wallet         Wallet?
+  loanApps       LoanApplication[]
+  policies       InsurancePolicy[]
+  invoices       Invoice[]
+  ledgerEntries  LedgerEntry[]
+  budgets        Budget[]
+}
+
+model KycDocument {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  idType      String // NATIONAL_ID | PASSPORT
+  idNumber    String
+  dob         String
+  address     String
+  status      String   @default("PENDING") // PENDING | VERIFIED | REJECTED
+  submittedAt DateTime @default(now())
+  reviewedAt  DateTime?
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  balance   Float    @default(0)
+  currency  String   @default("VND")
+  createdAt DateTime @default(now())
+
+  transactions       Transaction[] @relation("WalletTransactions")
+  incomingTransfers  Transaction[] @relation("CounterpartyTransactions")
+}
+
+model Transaction {
+  id               String   @id @default(uuid())
+  walletId         String
+  wallet           Wallet   @relation("WalletTransactions", fields: [walletId], references: [id])
+  type             String // DEPOSIT | WITHDRAW | TRANSFER_IN | TRANSFER_OUT | LOAN_DISBURSEMENT | LOAN_REPAYMENT | INSURANCE_PREMIUM | INSURANCE_PAYOUT
+  amount           Float
+  balanceAfter     Float
+  status           String   @default("COMPLETED") // COMPLETED | FAILED
+  category         String   @default("Khác")
+  description      String?
+  idempotencyKey   String?  @unique
+  counterpartyWalletId String?
+  counterpartyWallet   Wallet? @relation("CounterpartyTransactions", fields: [counterpartyWalletId], references: [id])
+  createdAt        DateTime @default(now())
+}
+
+model LoanApplication {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  amount        Float
+  purpose       String
+  termMonths    Int
+  status        String   @default("PENDING") // PENDING | APPROVED | REJECTED | ACTIVE | CLOSED | DEFAULTED
+  creditScore   Int?
+  interestRate  Float? // annual %
+  decisionNote  String?
+  createdAt     DateTime @default(now())
+  decisionAt    DateTime?
+  disbursedAt   DateTime?
+
+  schedule LoanRepaymentSchedule[]
+}
+
+model LoanRepaymentSchedule {
+  id            String   @id @default(uuid())
+  loanId        String
+  loan          LoanApplication @relation(fields: [loanId], references: [id])
+  periodNumber  Int
+  dueDate       DateTime
+  principalDue  Float
+  interestDue   Float
+  lateFee       Float    @default(0)
+  status        String   @default("UPCOMING") // UPCOMING | PAID | OVERDUE
+  paidAt        DateTime?
+}
+
+model InsurancePlan {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  category    String // HEALTH | VEHICLE | HOME | TRAVEL
+  baseRate    Float // % of sum insured per year
+  description String?
+
+  policies InsurancePolicy[]
+}
+
+model InsurancePolicy {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  planId       String
+  plan         InsurancePlan @relation(fields: [planId], references: [id])
+  subjectInfo  String // JSON blob describing insured subject
+  sumInsured   Float
+  premium      Float
+  riskScore    Int?
+  status       String   @default("ACTIVE") // ACTIVE | CANCELLED | EXPIRED
+  startDate    DateTime @default(now())
+  endDate      DateTime
+  createdAt    DateTime @default(now())
+
+  claims InsuranceClaim[]
+}
+
+model InsuranceClaim {
+  id              String   @id @default(uuid())
+  policyId        String
+  policy          InsurancePolicy @relation(fields: [policyId], references: [id])
+  description     String
+  amountRequested Float
+  amountApproved  Float?
+  status          String   @default("SUBMITTED") // SUBMITTED | UNDER_REVIEW | APPROVED | REJECTED | PAID
+  submittedAt     DateTime @default(now())
+  decisionAt      DateTime?
+}
+
+model Invoice {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  number       String   @unique
+  counterparty String
+  amount       Float
+  status       String   @default("DRAFT") // DRAFT | SENT | PAID | OVERDUE
+  issueDate    DateTime @default(now())
+  dueDate      DateTime
+  paidAt       DateTime?
+}
+
+model LedgerEntry {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  source      String // WALLET | LOAN | INSURANCE | INVOICE
+  sourceRefId String?
+  type        String // INCOME | EXPENSE
+  amount      Float
+  description String?
+  occurredAt  DateTime @default(now())
+}
+
+model Budget {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  category    String
+  limitAmount Float
+  month       String // YYYY-MM
+  createdAt   DateTime @default(now())
+}
