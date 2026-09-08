@@ -131,7 +131,7 @@ export default function Trading() {
                 ))}
               </div>
             </form>
-            <TradingViewChart symbol={symbol} height={720} />
+            <TradingViewChart symbol={symbol} height={850} />
           </Card>
 
           <Card>

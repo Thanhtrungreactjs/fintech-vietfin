@@ -1,10 +1,20 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Maximize2, Minimize2 } from "lucide-react";
 
 // Embeds TradingView's free "Advanced Chart" widget. Re-injects the widget
 // script whenever `symbol` changes since the widget renders itself once from
 // the JSON config and does not expose a JS API to update it afterwards.
-export default function TradingViewChart({ symbol, height = 480 }) {
+//
+// IMPORTANT: TradingView's own script forcibly sets the
+// ".tradingview-widget-container" element's inline height/width to 100% (it
+// expects to fill a host-sized wrapper, not to be sized itself). So the
+// resizable/fullscreen sizing must live on an OUTER wrapper div, with the
+// TradingView-managed div nested inside tracking it via height:100% —
+// otherwise every explicit height set directly on that div gets clobbered.
+export default function TradingViewChart({ symbol, height = 800 }) {
   const containerRef = useRef(null);
+  const wrapperRef = useRef(null);
+  const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -34,7 +44,38 @@ export default function TradingViewChart({ symbol, height = 480 }) {
     };
   }, [symbol]);
 
+  useEffect(() => {
+    const onFullscreenChange = () => setFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      wrapperRef.current?.requestFullscreen();
+    }
+  };
+
   return (
-    <div className="tradingview-widget-container overflow-hidden rounded-xl" style={{ height }} ref={containerRef} />
+    <div ref={wrapperRef} className={fullscreen ? "bg-[#0b0f0d] p-2" : "relative"}>
+      <button
+        type="button"
+        onClick={toggleFullscreen}
+        className="absolute right-2 top-2 z-10 flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/60 px-2.5 py-1.5 text-xs text-gray-300 backdrop-blur hover:text-white"
+        title={fullscreen ? "Thoát toàn màn hình" : "Xem toàn màn hình"}
+      >
+        {fullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+        {fullscreen ? "Thoát" : "Toàn màn hình"}
+      </button>
+      {/* Sizing/resizing lives here — never on the .tradingview-widget-container itself. */}
+      <div
+        className="resize-y overflow-auto rounded-xl border border-white/10"
+        style={{ height: fullscreen ? "calc(100vh - 16px)" : height, minHeight: 400 }}
+      >
+        <div className="tradingview-widget-container h-full w-full" ref={containerRef} />
+      </div>
+    </div>
   );
 }
