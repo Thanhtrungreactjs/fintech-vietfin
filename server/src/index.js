@@ -9,6 +9,7 @@ const lendingRoutes = require("./routes/lending");
 const insuranceRoutes = require("./routes/insurance");
 const bankingRoutes = require("./routes/banking");
 const corporateRoutes = require("./routes/corporate");
+const depositsRoutes = require("./routes/deposits");
 
 const app = express();
 app.use(cors());
@@ -22,6 +23,7 @@ app.use("/api/lending", lendingRoutes);
 app.use("/api/insurance", insuranceRoutes);
 app.use("/api/banking", bankingRoutes);
 app.use("/api/corporate", corporateRoutes);
+app.use("/api/deposits", depositsRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

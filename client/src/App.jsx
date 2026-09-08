@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import Overview from "./pages/Overview";
 import WalletPage from "./pages/Wallet";
+import Deposits from "./pages/Deposits";
 import Lending from "./pages/Lending";
 import LoanDetail from "./pages/LoanDetail";
 import Insurance from "./pages/Insurance";
@@ -43,6 +44,7 @@ export default function App() {
           >
             <Route index element={<Overview />} />
             <Route path="wallet" element={<WalletPage />} />
+            <Route path="deposits" element={<Deposits />} />
             <Route path="lending" element={<Lending />} />
             <Route path="lending/:id" element={<LoanDetail />} />
             <Route path="insurance" element={<Insurance />} />

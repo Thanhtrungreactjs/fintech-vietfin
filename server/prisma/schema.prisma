@@ -29,6 +29,7 @@ model User {
   invoices       Invoice[]
   ledgerEntries  LedgerEntry[]
   budgets        Budget[]
+  termDeposits   TermDeposit[]
 }
 
 model KycDocument {
@@ -161,7 +162,7 @@ model LedgerEntry {
   id          String   @id @default(uuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id])
-  source      String // WALLET | LOAN | INSURANCE | INVOICE
+  source      String // WALLET | LOAN | INSURANCE | INVOICE | DEPOSIT
   sourceRefId String?
   type        String // INCOME | EXPENSE
   amount      Float
@@ -177,4 +178,19 @@ model Budget {
   limitAmount Float
   month       String // YYYY-MM
   createdAt   DateTime @default(now())
+}
+
+model TermDeposit {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
+  principal    Float
+  termMonths   Int
+  interestRate Float // annual % for the full term, locked in at opening
+  status       String    @default("ACTIVE") // ACTIVE | MATURED | WITHDRAWN | WITHDRAWN_EARLY
+  startDate    DateTime  @default(now())
+  maturityDate DateTime
+  settledAt    DateTime?
+  interestPaid Float?
+  createdAt    DateTime  @default(now())
 }

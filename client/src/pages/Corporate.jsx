@@ -6,7 +6,7 @@ import { FileText, TrendingUp, TrendingDown, PlusCircle, Building2 } from "lucid
 
 const INVOICE_TONE = { DRAFT: "gray", SENT: "blue", PAID: "green", OVERDUE: "red" };
 const INVOICE_LABEL = { DRAFT: "Nháp", SENT: "Đã gửi", PAID: "Đã thanh toán", OVERDUE: "Quá hạn" };
-const SOURCE_LABEL = { WALLET: "Ví điện tử", LOAN: "Cho vay P2P", INSURANCE: "Bảo hiểm", INVOICE: "Hoá đơn" };
+const SOURCE_LABEL = { WALLET: "Ví điện tử", LOAN: "Cho vay P2P", INSURANCE: "Bảo hiểm", INVOICE: "Hoá đơn", DEPOSIT: "Tiết kiệm" };
 
 export default function Corporate() {
   const [invoices, setInvoices] = useState([]);

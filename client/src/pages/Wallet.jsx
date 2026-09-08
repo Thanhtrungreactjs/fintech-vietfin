@@ -17,7 +17,11 @@ const TX_LABELS = {
   LOAN_REPAYMENT: "Trả nợ vay",
   INSURANCE_PREMIUM: "Phí bảo hiểm",
   INSURANCE_PAYOUT: "Bồi thường bảo hiểm",
+  DEPOSIT_LOCK: "Gửi tiết kiệm",
+  DEPOSIT_SETTLEMENT: "Tất toán tiết kiệm",
 };
+
+const CREDIT_TYPES = ["DEPOSIT", "TRANSFER_IN", "LOAN_DISBURSEMENT", "INSURANCE_PAYOUT", "DEPOSIT_SETTLEMENT"];
 
 const CATEGORIES = ["Ăn uống", "Di chuyển", "Mua sắm", "Hoá đơn", "Giải trí", "Khác"];
 
@@ -193,12 +197,12 @@ export default function WalletPage() {
                     <td className="py-3 pr-4 text-white">{TX_LABELS[tx.type] || tx.type}</td>
                     <td
                       className={`py-3 pr-4 font-medium ${
-                        ["DEPOSIT", "TRANSFER_IN", "LOAN_DISBURSEMENT", "INSURANCE_PAYOUT"].includes(tx.type)
+                        CREDIT_TYPES.includes(tx.type)
                           ? "text-emerald-400"
                           : "text-red-400"
                       }`}
                     >
-                      {["DEPOSIT", "TRANSFER_IN", "LOAN_DISBURSEMENT", "INSURANCE_PAYOUT"].includes(tx.type) ? "+" : "-"}
+                      {CREDIT_TYPES.includes(tx.type) ? "+" : "-"}
                       {formatVND(tx.amount)}
                     </td>
                     <td className="py-3 pr-4 text-gray-400">{formatVND(tx.balanceAfter)}</td>

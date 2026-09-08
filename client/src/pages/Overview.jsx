@@ -13,7 +13,11 @@ const TX_LABELS = {
   LOAN_REPAYMENT: "Trả nợ vay",
   INSURANCE_PREMIUM: "Phí bảo hiểm",
   INSURANCE_PAYOUT: "Bồi thường bảo hiểm",
+  DEPOSIT_LOCK: "Gửi tiết kiệm",
+  DEPOSIT_SETTLEMENT: "Tất toán tiết kiệm",
 };
+
+const CREDIT_TYPES = ["DEPOSIT", "TRANSFER_IN", "LOAN_DISBURSEMENT", "INSURANCE_PAYOUT", "DEPOSIT_SETTLEMENT"];
 
 export default function Overview() {
   const [overview, setOverview] = useState(null);
@@ -82,12 +86,12 @@ export default function Overview() {
                   </div>
                   <p
                     className={
-                      ["DEPOSIT", "TRANSFER_IN", "LOAN_DISBURSEMENT", "INSURANCE_PAYOUT"].includes(tx.type)
+                      CREDIT_TYPES.includes(tx.type)
                         ? "font-medium text-emerald-400"
                         : "font-medium text-red-400"
                     }
                   >
-                    {["DEPOSIT", "TRANSFER_IN", "LOAN_DISBURSEMENT", "INSURANCE_PAYOUT"].includes(tx.type) ? "+" : "-"}
+                    {CREDIT_TYPES.includes(tx.type) ? "+" : "-"}
                     {formatVND(tx.amount)}
                   </p>
                 </div>

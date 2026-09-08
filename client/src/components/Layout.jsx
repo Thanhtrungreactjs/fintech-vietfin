@@ -1,10 +1,11 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Wallet, HandCoins, ShieldCheck, Building2, LogOut, UserCircle } from "lucide-react";
+import { LayoutDashboard, Wallet, HandCoins, ShieldCheck, Building2, PiggyBank, LogOut, UserCircle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const navItems = [
   { to: "/", label: "Tổng quan", icon: LayoutDashboard, end: true },
   { to: "/wallet", label: "Ví điện tử", icon: Wallet },
+  { to: "/deposits", label: "Tiết kiệm", icon: PiggyBank },
   { to: "/lending", label: "Cho vay P2P", icon: HandCoins },
   { to: "/insurance", label: "Bảo hiểm", icon: ShieldCheck },
   { to: "/corporate", label: "Tài chính DN", icon: Building2 },
