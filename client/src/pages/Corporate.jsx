@@ -301,50 +301,52 @@ export default function Corporate() {
             </div>
             <div className="space-y-2">
               {form.items.map((item, index) => (
-                <div key={index} className="grid grid-cols-12 gap-2 rounded-xl border border-white/10 p-3">
+                <div key={index} className="space-y-2 rounded-xl border border-white/10 p-3">
                   <Input
-                    className="col-span-12 sm:col-span-4"
                     placeholder="Tên hàng hoá / dịch vụ"
                     required
+                    className="text-base"
                     value={item.name}
                     onChange={(e) => setItem(index, { name: e.target.value })}
                   />
-                  <Select
-                    className="col-span-4 sm:col-span-2"
-                    value={item.unit}
-                    onChange={(e) => setItem(index, { unit: e.target.value })}
-                  >
-                    {UNITS.map((u) => (
-                      <option key={u} value={u}>
-                        {u}
-                      </option>
-                    ))}
-                  </Select>
-                  <Input
-                    className="col-span-3 sm:col-span-2"
-                    type="number"
-                    min="0"
-                    step="any"
-                    placeholder="SL"
-                    required
-                    value={item.quantity}
-                    onChange={(e) => setItem(index, { quantity: e.target.value })}
-                  />
-                  <div className="col-span-4 sm:col-span-3">
-                    <AmountInput
-                      placeholder="Đơn giá"
-                      value={item.unitPrice}
-                      onChange={(v) => setItem(index, { unitPrice: v })}
+                  <div className="grid grid-cols-12 gap-2">
+                    <Select
+                      className="col-span-6 sm:col-span-4"
+                      value={item.unit}
+                      onChange={(e) => setItem(index, { unit: e.target.value })}
+                    >
+                      {UNITS.map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                    </Select>
+                    <Input
+                      className="col-span-6 sm:col-span-2"
+                      type="number"
+                      min="0"
+                      step="any"
+                      placeholder="SL"
+                      required
+                      value={item.quantity}
+                      onChange={(e) => setItem(index, { quantity: e.target.value })}
                     />
+                    <div className="col-span-11 sm:col-span-5">
+                      <AmountInput
+                        placeholder="Đơn giá"
+                        value={item.unitPrice}
+                        onChange={(v) => setItem(index, { unitPrice: v })}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      disabled={form.items.length === 1}
+                      className="col-span-1 flex items-center justify-center rounded-lg text-gray-500 hover:text-red-400 disabled:opacity-30"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeItem(index)}
-                    disabled={form.items.length === 1}
-                    className="col-span-1 flex items-center justify-center rounded-lg text-gray-500 hover:text-red-400 disabled:opacity-30"
-                  >
-                    <Trash2 size={16} />
-                  </button>
                 </div>
               ))}
             </div>
