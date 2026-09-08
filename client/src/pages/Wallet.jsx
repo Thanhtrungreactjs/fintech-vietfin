@@ -6,9 +6,6 @@ import { formatVND, formatDateTime } from "../lib/format";
 import { Card, SectionTitle, Button, Input, AmountInput, Select, Badge, EmptyState, Alert, Modal } from "../components/ui";
 import { ArrowDownCircle, ArrowUpCircle, Send, Wallet as WalletIcon, QrCode, Loader2, Copy, Check } from "lucide-react";
 
-// Real bank account used to demo top-up / withdrawal via VietQR (NAPAS BIN 970423 = TPBank).
-const BANK = { bin: "970423", name: "TPBank (Ngân hàng TMCP Tiên Phong)", accountNumber: "12311111111" };
-
 const TX_LABELS = {
   DEPOSIT: "Nạp tiền",
   WITHDRAW: "Rút tiền",
@@ -32,12 +29,13 @@ function genKey() {
   return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
 }
 
-function BankTransferCard({ amount, note, hint }) {
+function BankTransferCard({ bank, amount, note, hint }) {
+  if (!bank) return null;
   const params = new URLSearchParams();
   if (amount) params.set("amount", String(amount));
   if (note) params.set("addInfo", note);
   const qs = params.toString();
-  const qrSrc = `https://img.vietqr.io/image/${BANK.bin}-${BANK.accountNumber}-compact2.png${qs ? `?${qs}` : ""}`;
+  const qrSrc = `https://img.vietqr.io/image/${bank.bin}-${bank.accountNumber}-compact2.png${qs ? `?${qs}` : ""}`;
 
   return (
     <div className="rounded-xl border border-white/10 bg-black/20 p-4">
@@ -49,11 +47,11 @@ function BankTransferCard({ amount, note, hint }) {
         <div className="flex-1 space-y-1.5 text-sm">
           <div>
             <p className="text-xs text-gray-500">Ngân hàng</p>
-            <p className="text-white">{BANK.name}</p>
+            <p className="text-white">{bank.name}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500">Số tài khoản</p>
-            <p className="font-mono text-white">{BANK.accountNumber}</p>
+            <p className="font-mono text-white">{bank.accountNumber}</p>
           </div>
           {amount > 0 && (
             <div>
@@ -144,6 +142,14 @@ export default function WalletPage() {
   const [busy, setBusy] = useState(false);
   const [topupIntent, setTopupIntent] = useState(null);
   const [selectedTx, setSelectedTx] = useState(null);
+  const [bankConfig, setBankConfig] = useState(null);
+
+  useEffect(() => {
+    api
+      .get("/config/bank-account")
+      .then(({ data }) => setBankConfig(data))
+      .catch(() => {});
+  }, []);
 
   const loadWallet = async () => {
     const { data } = await api.get("/wallet");
@@ -212,7 +218,6 @@ export default function WalletPage() {
     setBusy(true);
     try {
       const payload = { amount: Number(form.amount), idempotencyKey: genKey(), description: form.description };
-      if (modal === "deposit") await api.post("/wallet/deposit", payload);
       if (modal === "withdraw") await api.post("/wallet/withdraw", { ...payload, category: form.category });
       if (modal === "transfer")
         await api.post("/wallet/transfer", { ...payload, toEmail: form.toEmail, category: form.category });
@@ -342,7 +347,7 @@ export default function WalletPage() {
           )}
           <AmountInput
             label="Số tiền (VND)"
-            required
+            required={modal !== "deposit"}
             placeholder="0"
             value={form.amount}
             onChange={(digits) => setForm({ ...form, amount: digits })}
@@ -350,6 +355,7 @@ export default function WalletPage() {
           {modal === "deposit" && (
             <>
               <BankTransferCard
+                bank={bankConfig}
                 amount={Number(form.amount) || 0}
                 note={topupIntent?.code || `NAPTIEN ${user?.fullName || ""}`.trim()}
                 hint="Chuyển khoản đúng số tiền và giữ nguyên nội dung ở trên — hệ thống sẽ tự động cộng tiền vào ví khi ngân hàng báo có."
@@ -364,6 +370,7 @@ export default function WalletPage() {
           )}
           {modal === "withdraw" && (
             <BankTransferCard
+              bank={bankConfig}
               amount={Number(form.amount) || 0}
               note={`RUTTIEN ${user?.fullName || ""}`.trim()}
               hint="Tiền rút sẽ được chuyển về tài khoản ngân hàng liên kết này sau khi yêu cầu được xử lý."
@@ -384,13 +391,10 @@ export default function WalletPage() {
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
           {error && <Alert>{error}</Alert>}
-          <Button type="submit" className="w-full" disabled={busy}>
-            {busy ? "Đang xử lý..." : modal === "deposit" ? "Mô phỏng: đã nhận được tiền (dev)" : "Xác nhận"}
-          </Button>
-          {modal === "deposit" && (
-            <p className="text-center text-xs text-gray-500">
-              Nút trên chỉ dùng để giả lập khi test — khi có webhook SePay thật, ví sẽ tự cộng tiền không cần bấm gì.
-            </p>
+          {modal !== "deposit" && (
+            <Button type="submit" className="w-full" disabled={busy}>
+              {busy ? "Đang xử lý..." : "Xác nhận"}
+            </Button>
           )}
         </form>
       </Modal>
