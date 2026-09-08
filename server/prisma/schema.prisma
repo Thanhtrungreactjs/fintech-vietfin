@@ -219,6 +219,8 @@ model TermDeposit {
   id           String    @id @default(uuid())
   userId       String
   user         User      @relation(fields: [userId], references: [id])
+  bankCode     String // VietQR bank code, e.g. VCB, TCB, MB
+  bankName     String
   principal    Float
   termMonths   Int
   interestRate Float // annual % for the full term, locked in at opening

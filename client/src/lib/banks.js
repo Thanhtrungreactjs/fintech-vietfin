@@ -10,6 +10,7 @@ export const BANKS = [
   { code: "VPB", name: "VPBank", logo: "https://cdn.vietqr.io/img/VPB.png" },
   { code: "BIDV", name: "BIDV", logo: "https://cdn.vietqr.io/img/BIDV.png" },
   { code: "ICB", name: "VietinBank", logo: "https://cdn.vietqr.io/img/ICB.png" },
+  { code: "VBA", name: "Agribank", logo: "https://cdn.vietqr.io/img/VBA.png" },
   { code: "STB", name: "Sacombank", logo: "https://cdn.vietqr.io/img/STB.png" },
   { code: "HDB", name: "HDBank", logo: "https://cdn.vietqr.io/img/HDB.png" },
   { code: "VIB", name: "VIB", logo: "https://cdn.vietqr.io/img/VIB.png" },

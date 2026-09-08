@@ -3,8 +3,8 @@ const prisma = require("../lib/prisma");
 const { requireAuth } = require("../middleware/auth");
 const { recordLedgerEntry } = require("../lib/ledger");
 const {
-  TERM_RATES,
-  getRateForTerm,
+  listBanks,
+  getRateForBankTerm,
   calcMaturityInterest,
   calcEarlyWithdrawalInterest,
 } = require("../lib/deposit-engine");
@@ -17,19 +17,19 @@ function addMonths(date, months) {
   return d;
 }
 
-router.get("/rates", requireAuth, (req, res) => {
-  res.json({ rates: TERM_RATES });
+router.get("/banks", requireAuth, (req, res) => {
+  res.json({ banks: listBanks() });
 });
 
 router.post("/", requireAuth, async (req, res) => {
-  const { amount, termMonths } = req.body;
-  if (!amount || amount <= 0 || !termMonths) {
+  const { bankCode, amount, termMonths } = req.body;
+  if (!bankCode || !amount || amount <= 0 || !termMonths) {
     return res.status(400).json({ error: "Thiếu thông tin gửi tiết kiệm" });
   }
 
-  let rate;
+  let rate, bankName;
   try {
-    rate = getRateForTerm(termMonths);
+    ({ rate, bankName } = getRateForBankTerm(bankCode, termMonths));
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }
@@ -48,6 +48,8 @@ router.post("/", requireAuth, async (req, res) => {
       const deposit = await tx.termDeposit.create({
         data: {
           userId: req.userId,
+          bankCode,
+          bankName,
           principal: amount,
           termMonths: Number(termMonths),
           interestRate: rate,
@@ -63,7 +65,7 @@ router.post("/", requireAuth, async (req, res) => {
           amount,
           balanceAfter,
           category: "Tiết kiệm",
-          description: `Mở sổ tiết kiệm kỳ hạn ${termMonths} tháng`,
+          description: `Mở sổ tiết kiệm ${bankName} kỳ hạn ${termMonths} tháng`,
         },
       });
 

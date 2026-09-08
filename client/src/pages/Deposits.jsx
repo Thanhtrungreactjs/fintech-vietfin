@@ -3,6 +3,8 @@ import api from "../api/client";
 import { formatVND, formatDate } from "../lib/format";
 import { Card, SectionTitle, Button, AmountInput, Badge, EmptyState, Alert, Modal } from "../components/ui";
 import { PiggyBank, TrendingUp } from "lucide-react";
+import InsurerLogo from "../components/InsurerLogo";
+import { BANKS } from "../lib/banks";
 
 const STATUS_TONE = { ACTIVE: "green", MATURED: "blue", WITHDRAWN: "gray", WITHDRAWN_EARLY: "yellow" };
 const STATUS_LABEL = {
@@ -12,10 +14,15 @@ const STATUS_LABEL = {
   WITHDRAWN_EARLY: "Đã tất toán trước hạn",
 };
 
+function bankLogo(code) {
+  return BANKS.find((b) => b.code === code)?.logo;
+}
+
 export default function Deposits() {
-  const [rates, setRates] = useState([]);
+  const [banks, setBanks] = useState([]);
   const [deposits, setDeposits] = useState([]);
-  const [openTerm, setOpenTerm] = useState(null);
+  const [selectedBank, setSelectedBank] = useState(null);
+  const [selectedTerm, setSelectedTerm] = useState(null);
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -24,8 +31,8 @@ export default function Deposits() {
   const [preview, setPreview] = useState(null);
 
   const load = async () => {
-    const [{ data: r }, { data: d }] = await Promise.all([api.get("/deposits/rates"), api.get("/deposits")]);
-    setRates(r.rates);
+    const [{ data: b }, { data: d }] = await Promise.all([api.get("/deposits/banks"), api.get("/deposits")]);
+    setBanks(b.banks);
     setDeposits(d.deposits);
   };
 
@@ -33,8 +40,16 @@ export default function Deposits() {
     load();
   }, []);
 
+  const openBank = (bank) => {
+    setSelectedBank(bank);
+    setSelectedTerm(null);
+    setAmount("");
+    setError("");
+  };
+
   const closeOpenModal = () => {
-    setOpenTerm(null);
+    setSelectedBank(null);
+    setSelectedTerm(null);
     setAmount("");
     setError("");
   };
@@ -42,9 +57,13 @@ export default function Deposits() {
   const submitOpen = async (e) => {
     e.preventDefault();
     setError("");
+    if (!selectedTerm) {
+      setError("Vui lòng chọn kỳ hạn");
+      return;
+    }
     setBusy(true);
     try {
-      await api.post("/deposits", { amount: Number(amount), termMonths: openTerm.months });
+      await api.post("/deposits", { bankCode: selectedBank.code, amount: Number(amount), termMonths: selectedTerm });
       closeOpenModal();
       load();
     } catch (err) {
@@ -81,29 +100,38 @@ export default function Deposits() {
     }
   };
 
-  const projected = openTerm && amount ? Math.round(Number(amount) * (openTerm.rate / 100) * (openTerm.months / 12)) : 0;
+  const rate = selectedBank && selectedTerm ? selectedBank.rates[selectedTerm] : null;
+  const projected = rate && amount ? Math.round(Number(amount) * (rate / 100) * (selectedTerm / 12)) : 0;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-white">Tiết kiệm &amp; Đầu tư tiền gửi</h1>
-        <p className="text-sm text-gray-400">Gửi tiết kiệm có kỳ hạn với lãi suất cố định, tất toán linh hoạt.</p>
+        <p className="text-sm text-gray-400">
+          Lãi suất tiết kiệm thực tế của các ngân hàng Việt Nam — chọn ngân hàng và kỳ hạn phù hợp.
+        </p>
       </div>
 
       <Card>
-        <SectionTitle icon={<PiggyBank size={18} />} title="Lãi suất theo kỳ hạn" />
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {rates.map((r) => (
-            <div key={r.months} className="rounded-xl border border-white/10 p-4 text-center">
-              <p className="text-xs text-gray-500">Kỳ hạn</p>
-              <p className="text-lg font-semibold text-white">{r.months} tháng</p>
-              <p className="mt-1 text-2xl font-semibold text-emerald-400">{r.rate}%</p>
-              <p className="text-xs text-gray-500">/năm</p>
-              <Button variant="secondary" className="mt-3 w-full" onClick={() => setOpenTerm(r)}>
-                Gửi tiết kiệm
-              </Button>
-            </div>
-          ))}
+        <SectionTitle icon={<PiggyBank size={18} />} title="Chọn ngân hàng gửi tiết kiệm" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {banks.map((bank) => {
+            const bestRate = Math.max(...Object.values(bank.rates));
+            return (
+              <button
+                key={bank.code}
+                type="button"
+                onClick={() => openBank(bank)}
+                className="flex flex-col items-center gap-2 rounded-xl border border-white/10 p-4 text-center hover:border-emerald-500/40 hover:bg-white/5"
+              >
+                <InsurerLogo src={bankLogo(bank.code)} name={bank.name} size="h-11 w-11" />
+                <span className="text-sm font-medium text-gray-200">{bank.name}</span>
+                <span className="text-xs text-gray-500">
+                  Lãi suất cao nhất <span className="text-emerald-400">{bestRate}%/năm</span>
+                </span>
+              </button>
+            );
+          })}
         </div>
       </Card>
 
@@ -115,14 +143,17 @@ export default function Deposits() {
           <div className="divide-y divide-white/5">
             {deposits.map((d) => (
               <div key={d.id} className="flex items-center justify-between py-4 text-sm">
-                <div>
-                  <p className="font-medium text-white">
-                    {formatVND(d.principal)} · Kỳ hạn {d.termMonths} tháng · {d.interestRate}%/năm
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Ngày gửi {formatDate(d.startDate)} · Đáo hạn {formatDate(d.maturityDate)}
-                    {d.interestPaid != null && ` · Lãi thực nhận: ${formatVND(d.interestPaid)}`}
-                  </p>
+                <div className="flex items-center gap-3">
+                  <InsurerLogo src={bankLogo(d.bankCode)} name={d.bankName} size="h-9 w-9" />
+                  <div>
+                    <p className="font-medium text-white">
+                      {d.bankName} · {formatVND(d.principal)} · Kỳ hạn {d.termMonths} tháng · {d.interestRate}%/năm
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Ngày gửi {formatDate(d.startDate)} · Đáo hạn {formatDate(d.maturityDate)}
+                      {d.interestPaid != null && ` · Lãi thực nhận: ${formatVND(d.interestPaid)}`}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge tone={STATUS_TONE[d.status]}>{STATUS_LABEL[d.status]}</Badge>
@@ -138,14 +169,42 @@ export default function Deposits() {
         )}
       </Card>
 
-      <Modal open={!!openTerm} onClose={closeOpenModal} title={`Gửi tiết kiệm kỳ hạn ${openTerm?.months || ""} tháng`}>
+      <Modal open={!!selectedBank} onClose={closeOpenModal} title={`Gửi tiết kiệm tại ${selectedBank?.name || ""}`}>
         <form onSubmit={submitOpen} className="space-y-4">
+          <div className="flex items-center gap-3">
+            <InsurerLogo src={bankLogo(selectedBank?.code)} name={selectedBank?.name} size="h-10 w-10" />
+            <p className="text-sm text-gray-400">Lãi suất niêm yết thực tế của {selectedBank?.name}</p>
+          </div>
+
+          <div>
+            <span className="mb-2 block text-sm text-gray-400">Chọn kỳ hạn</span>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+              {selectedBank &&
+                Object.entries(selectedBank.rates).map(([months, r]) => (
+                  <button
+                    key={months}
+                    type="button"
+                    onClick={() => setSelectedTerm(Number(months))}
+                    className={`rounded-xl border p-2 text-center ${
+                      selectedTerm === Number(months)
+                        ? "border-emerald-500/60 bg-emerald-500/10"
+                        : "border-white/10 hover:border-white/20"
+                    }`}
+                  >
+                    <p className="text-xs text-gray-500">{months} tháng</p>
+                    <p className="font-semibold text-white">{r}%</p>
+                  </button>
+                ))}
+            </div>
+          </div>
+
           <AmountInput label="Số tiền gửi (VND)" required placeholder="0" value={amount} onChange={setAmount} />
-          {openTerm && amount > 0 && (
+
+          {rate && amount > 0 && (
             <div className="rounded-xl border border-white/10 bg-black/20 p-4 text-sm">
               <div className="flex items-center gap-2 text-emerald-400">
                 <TrendingUp size={16} />
-                <span>Lãi suất {openTerm.rate}%/năm</span>
+                <span>Lãi suất {rate}%/năm</span>
               </div>
               <p className="mt-2 text-gray-400">
                 Lãi dự kiến khi đáo hạn: <span className="text-white">{formatVND(projected)}</span>
