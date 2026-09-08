@@ -89,6 +89,9 @@ model LoanApplication {
   interestRate  Float? // annual %, set by the admin at approval time (may differ from the suggested rate)
   decisionNote  String?
   reviewedByAdminId String? // which admin approved/rejected this application
+  disbursementBank          String? // VietQR bank/e-wallet code chosen for disbursement, e.g. TPB, MB, momo
+  disbursementBankName      String?
+  disbursementAccountNumber String?
   createdAt     DateTime @default(now())
   decisionAt    DateTime?
   disbursedAt   DateTime?

@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import api from "../api/client";
 import { formatVND, formatDate } from "../lib/format";
 import { Card, SectionTitle, Button, Input, Select, Badge, EmptyState, Alert, Modal } from "../components/ui";
-import { HandCoins, PlusCircle } from "lucide-react";
+import { HandCoins, PlusCircle, Check } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { BANKS } from "../lib/banks";
 
 const STATUS_TONE = {
   PENDING: "yellow",
@@ -28,7 +29,7 @@ export default function Lending() {
   const { user } = useAuth();
   const [loans, setLoans] = useState([]);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ amount: "", purpose: "", termMonths: 6 });
+  const [form, setForm] = useState({ amount: "", purpose: "", termMonths: 6, bankCode: "", accountNumber: "" });
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -42,9 +43,15 @@ export default function Lending() {
     load();
   }, []);
 
+  const selectedBank = BANKS.find((b) => b.code === form.bankCode);
+
   const apply = async (e) => {
     e.preventDefault();
     setError("");
+    if (!form.bankCode) {
+      setError("Vui lòng chọn ngân hàng/ví nhận giải ngân");
+      return;
+    }
     setBusy(true);
     setResult(null);
     try {
@@ -52,6 +59,9 @@ export default function Lending() {
         amount: Number(form.amount),
         purpose: form.purpose,
         termMonths: Number(form.termMonths),
+        disbursementBank: form.bankCode,
+        disbursementBankName: selectedBank?.name,
+        disbursementAccountNumber: form.accountNumber,
       });
       setResult(data);
       load();
@@ -71,6 +81,7 @@ export default function Lending() {
         </div>
         <Button
           onClick={() => {
+            setForm({ amount: "", purpose: "", termMonths: 6, bankCode: "", accountNumber: "" });
             setOpen(true);
             setResult(null);
             setError("");
@@ -98,12 +109,22 @@ export default function Lending() {
                 to={`/lending/${loan.id}`}
                 className="flex items-center justify-between py-4 text-sm hover:bg-white/5 rounded-lg px-2 -mx-2"
               >
-                <div>
-                  <p className="font-medium text-white">{loan.purpose}</p>
-                  <p className="text-xs text-gray-500">
-                    {formatVND(loan.amount)} · {loan.termMonths} tháng · Điểm TD: {loan.creditScore ?? "-"}
-                    {loan.interestRate ? ` · Lãi suất ${loan.interestRate}%/năm` : ""}
-                  </p>
+                <div className="flex items-center gap-3">
+                  {loan.disbursementBank && (
+                    <img
+                      src={BANKS.find((b) => b.code === loan.disbursementBank)?.logo}
+                      alt={loan.disbursementBankName}
+                      className="h-8 w-8 shrink-0 rounded-lg bg-white object-contain p-1"
+                    />
+                  )}
+                  <div>
+                    <p className="font-medium text-white">{loan.purpose}</p>
+                    <p className="text-xs text-gray-500">
+                      {formatVND(loan.amount)} · {loan.termMonths} tháng · Điểm TD: {loan.creditScore ?? "-"}
+                      {loan.interestRate ? ` · Lãi suất ${loan.interestRate}%/năm` : ""}
+                      {loan.disbursementBankName ? ` · Nhận qua ${loan.disbursementBankName}` : ""}
+                    </p>
+                  </div>
                 </div>
                 <Badge tone={STATUS_TONE[loan.status]}>{STATUS_LABEL[loan.status]}</Badge>
               </Link>
@@ -112,7 +133,7 @@ export default function Lending() {
         )}
       </Card>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Đăng ký khoản vay">
+      <Modal open={open} onClose={() => setOpen(false)} title="Đăng ký khoản vay" size="lg">
         {!result ? (
           <form onSubmit={apply} className="space-y-4">
             <Input
@@ -136,6 +157,42 @@ export default function Lending() {
               <option value={12}>12 tháng</option>
               <option value={24}>24 tháng</option>
             </Select>
+
+            <div>
+              <span className="mb-2 block text-sm text-gray-400">Ngân hàng / ví nhận giải ngân</span>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                {BANKS.map((bank) => (
+                  <button
+                    key={bank.code}
+                    type="button"
+                    onClick={() => setForm({ ...form, bankCode: bank.code })}
+                    className={`relative flex flex-col items-center gap-1.5 rounded-xl border p-2.5 transition ${
+                      form.bankCode === bank.code
+                        ? "border-emerald-500/60 bg-emerald-500/10"
+                        : "border-white/10 hover:border-white/20"
+                    }`}
+                  >
+                    {form.bankCode === bank.code && (
+                      <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500">
+                        <Check size={10} className="text-black" />
+                      </span>
+                    )}
+                    <img src={bank.logo} alt={bank.name} className="h-8 w-8 rounded-lg bg-white object-contain p-1" />
+                    <span className="text-center text-[11px] leading-tight text-gray-300">{bank.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {form.bankCode && (
+              <Input
+                label={`Số tài khoản / số điện thoại ${selectedBank?.name || ""}`}
+                required
+                value={form.accountNumber}
+                onChange={(e) => setForm({ ...form, accountNumber: e.target.value })}
+              />
+            )}
+
             {error && <Alert>{error}</Alert>}
             <Button type="submit" className="w-full" disabled={busy}>
               {busy ? "Đang chấm điểm tín dụng..." : "Gửi hồ sơ vay"}

@@ -50,9 +50,12 @@ async function syncOverdueInstallments(loanId) {
 }
 
 router.post("/apply", requireAuth, async (req, res) => {
-  const { amount, purpose, termMonths } = req.body;
+  const { amount, purpose, termMonths, disbursementBank, disbursementBankName, disbursementAccountNumber } = req.body;
   if (!amount || amount <= 0 || !purpose || !termMonths || termMonths <= 0) {
     return res.status(400).json({ error: "Thiếu hoặc sai thông tin khoản vay" });
+  }
+  if (!disbursementBank || !disbursementAccountNumber) {
+    return res.status(400).json({ error: "Cần chọn ngân hàng/ví nhận giải ngân và nhập số tài khoản" });
   }
 
   const user = await prisma.user.findUnique({ where: { id: req.userId } });
@@ -76,6 +79,9 @@ router.post("/apply", requireAuth, async (req, res) => {
       creditScore: score,
       interestRate: offer.interestRate,
       decisionNote: `Gợi ý từ hệ thống chấm điểm: ${offer.reason}`,
+      disbursementBank,
+      disbursementBankName: disbursementBankName || disbursementBank,
+      disbursementAccountNumber,
     },
   });
 

@@ -4,6 +4,7 @@ import api from "../api/client";
 import { formatVND, formatDate } from "../lib/format";
 import { Card, SectionTitle, Button, Badge, Alert } from "../components/ui";
 import { ArrowLeft } from "lucide-react";
+import { BANKS } from "../lib/banks";
 
 const SCHEDULE_TONE = { UPCOMING: "blue", PAID: "green", OVERDUE: "red" };
 const SCHEDULE_LABEL = { UPCOMING: "Sắp đến hạn", PAID: "Đã thanh toán", OVERDUE: "Quá hạn" };
@@ -86,6 +87,19 @@ export default function LoanDetail() {
             <div>
               <p className="text-gray-500">Ngày giải ngân</p>
               <p className="text-white">{formatDate(loan.disbursedAt)}</p>
+            </div>
+          )}
+          {loan.disbursementBankName && (
+            <div>
+              <p className="text-gray-500">Nhận giải ngân qua</p>
+              <p className="flex items-center gap-1.5 text-white">
+                <img
+                  src={BANKS.find((b) => b.code === loan.disbursementBank)?.logo}
+                  alt={loan.disbursementBankName}
+                  className="h-5 w-5 rounded bg-white object-contain p-0.5"
+                />
+                {loan.disbursementBankName} · {loan.disbursementAccountNumber}
+              </p>
             </div>
           )}
         </div>

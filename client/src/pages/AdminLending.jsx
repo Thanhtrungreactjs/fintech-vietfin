@@ -3,6 +3,7 @@ import api from "../api/client";
 import { formatVND, formatDateTime } from "../lib/format";
 import { Card, SectionTitle, Button, Input, Badge, EmptyState, Alert, Select } from "../components/ui";
 import { ShieldAlert } from "lucide-react";
+import { BANKS } from "../lib/banks";
 
 const STATUS_TONE = { PENDING: "yellow", APPROVED: "blue", REJECTED: "red", ACTIVE: "green", CLOSED: "gray", DEFAULTED: "red" };
 const STATUS_LABEL = {
@@ -108,6 +109,16 @@ export default function AdminLending() {
                       <span className="text-white">{loan.interestRate ? `${loan.interestRate}%/năm` : "-"}</span> · KYC:{" "}
                       <Badge tone={loan.user.kycStatus === "VERIFIED" ? "green" : "yellow"}>{loan.user.kycStatus}</Badge>
                     </p>
+                    {loan.disbursementBankName && (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-400">
+                        <img
+                          src={BANKS.find((b) => b.code === loan.disbursementBank)?.logo}
+                          alt={loan.disbursementBankName}
+                          className="h-4 w-4 rounded bg-white object-contain p-0.5"
+                        />
+                        Giải ngân về {loan.disbursementBankName} · {loan.disbursementAccountNumber}
+                      </p>
+                    )}
                     {loan.decisionNote && <p className="mt-1 text-xs text-gray-500">{loan.decisionNote}</p>}
                   </div>
                   <Badge tone={STATUS_TONE[loan.status]}>{STATUS_LABEL[loan.status]}</Badge>
