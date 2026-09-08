@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/client";
 import { formatVND, formatDate } from "../lib/format";
-import { Card, SectionTitle, Button, Input, Select, Badge, EmptyState, Alert, Modal } from "../components/ui";
+import { Card, SectionTitle, Button, Input, AmountInput, Select, Badge, EmptyState, Alert, Modal } from "../components/ui";
 import { HandCoins, PlusCircle, Check } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { BANKS } from "../lib/banks";
@@ -136,13 +136,12 @@ export default function Lending() {
       <Modal open={open} onClose={() => setOpen(false)} title="Đăng ký khoản vay" size="lg">
         {!result ? (
           <form onSubmit={apply} className="space-y-4">
-            <Input
+            <AmountInput
               label="Số tiền muốn vay (VND)"
-              type="number"
-              min="1000000"
               required
+              placeholder="0"
               value={form.amount}
-              onChange={(e) => setForm({ ...form, amount: e.target.value })}
+              onChange={(digits) => setForm({ ...form, amount: digits })}
             />
             <Input
               label="Mục đích vay"
@@ -178,7 +177,7 @@ export default function Lending() {
                       </span>
                     )}
                     <img src={bank.logo} alt={bank.name} className="h-14 w-14 rounded-lg bg-white object-contain p-2" />
-                    <span className="text-center text-sm leading-tight text-gray-300">{bank.name}</span>
+                    <span className="text-center text-base font-medium leading-tight text-gray-200">{bank.name}</span>
                   </button>
                 ))}
               </div>
