@@ -15,6 +15,18 @@ function publicUser(user) {
   return rest;
 }
 
+// Bootstraps admin access without needing an invite/promotion UI: any email
+// listed in ADMIN_EMAILS (comma-separated) is granted admin rights on
+// register/login. Re-checked on every login so revoking an email later
+// (by editing .env) also demotes the account.
+function isConfiguredAdminEmail(email) {
+  const list = (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return list.includes(String(email).toLowerCase());
+}
+
 router.post("/register", async (req, res) => {
   const { email, password, fullName, phone, role } = req.body;
   if (!email || !password || !fullName) {
@@ -32,6 +44,7 @@ router.post("/register", async (req, res) => {
       fullName,
       phone: phone || null,
       role: role === "BUSINESS" ? "BUSINESS" : "PERSONAL",
+      isAdmin: isConfiguredAdminEmail(email),
       wallet: { create: { balance: 0 } },
     },
     include: { wallet: true },
@@ -49,8 +62,14 @@ router.post("/login", async (req, res) => {
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) return res.status(401).json({ error: "Email hoặc mật khẩu không đúng" });
 
-  const token = signToken(user.id);
-  res.json({ token, user: publicUser(user) });
+  const shouldBeAdmin = isConfiguredAdminEmail(user.email);
+  const finalUser =
+    shouldBeAdmin !== user.isAdmin
+      ? await prisma.user.update({ where: { id: user.id }, data: { isAdmin: shouldBeAdmin } })
+      : user;
+
+  const token = signToken(finalUser.id);
+  res.json({ token, user: publicUser(finalUser) });
 });
 
 router.get("/me", requireAuth, async (req, res) => {

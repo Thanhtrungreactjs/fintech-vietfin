@@ -1,6 +1,6 @@
 const express = require("express");
 const prisma = require("../lib/prisma");
-const { requireAuth } = require("../middleware/auth");
+const { requireAuth, requireAdmin } = require("../middleware/auth");
 const { computeCreditScore, decideLoanOffer } = require("../lib/credit-engine");
 const { recordLedgerEntry } = require("../lib/ledger");
 
@@ -63,21 +63,75 @@ router.post("/apply", requireAuth, async (req, res) => {
   const { score, factors } = await computeCreditScore(req.userId);
   const offer = decideLoanOffer(score, amount);
 
+  // The scoring engine only produces a *suggestion* for the admin — every
+  // application lands in PENDING and stays there for a real human review;
+  // nothing here can self-approve or self-reject a loan.
   const loan = await prisma.loanApplication.create({
     data: {
       userId: req.userId,
       amount,
       purpose,
       termMonths,
-      status: offer.approved ? "APPROVED" : "REJECTED",
+      status: "PENDING",
       creditScore: score,
       interestRate: offer.interestRate,
-      decisionNote: offer.reason,
-      decisionAt: new Date(),
+      decisionNote: `Gợi ý từ hệ thống chấm điểm: ${offer.reason}`,
     },
   });
 
   res.status(201).json({ loan, creditScore: score, factors, offer });
+});
+
+// ---- Admin review ---------------------------------------------------------
+
+router.get("/admin/applications", requireAuth, requireAdmin, async (req, res) => {
+  const status = req.query.status || "PENDING";
+  const loans = await prisma.loanApplication.findMany({
+    where: status === "ALL" ? {} : { status },
+    include: { user: { select: { id: true, fullName: true, email: true, kycStatus: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+  res.json({ loans });
+});
+
+router.post("/admin/applications/:id/approve", requireAuth, requireAdmin, async (req, res) => {
+  const loan = await prisma.loanApplication.findUnique({ where: { id: req.params.id } });
+  if (!loan) return res.status(404).json({ error: "Không tìm thấy khoản vay" });
+  if (loan.status !== "PENDING") return res.status(400).json({ error: "Khoản vay đã được xử lý trước đó" });
+
+  const interestRate = req.body.interestRate != null ? Number(req.body.interestRate) : loan.interestRate;
+  if (!interestRate || interestRate <= 0) {
+    return res.status(400).json({ error: "Cần chỉ định lãi suất để phê duyệt" });
+  }
+
+  const updated = await prisma.loanApplication.update({
+    where: { id: loan.id },
+    data: {
+      status: "APPROVED",
+      interestRate,
+      decisionNote: req.body.note || "Được admin phê duyệt",
+      decisionAt: new Date(),
+      reviewedByAdminId: req.userId,
+    },
+  });
+  res.json({ loan: updated });
+});
+
+router.post("/admin/applications/:id/reject", requireAuth, requireAdmin, async (req, res) => {
+  const loan = await prisma.loanApplication.findUnique({ where: { id: req.params.id } });
+  if (!loan) return res.status(404).json({ error: "Không tìm thấy khoản vay" });
+  if (loan.status !== "PENDING") return res.status(400).json({ error: "Khoản vay đã được xử lý trước đó" });
+
+  const updated = await prisma.loanApplication.update({
+    where: { id: loan.id },
+    data: {
+      status: "REJECTED",
+      decisionNote: req.body.reason || "Bị admin từ chối",
+      decisionAt: new Date(),
+      reviewedByAdminId: req.userId,
+    },
+  });
+  res.json({ loan: updated });
 });
 
 router.get("/applications", requireAuth, async (req, res) => {

@@ -16,7 +16,7 @@ const STATUS_TONE = {
 };
 
 const STATUS_LABEL = {
-  PENDING: "Chờ duyệt",
+  PENDING: "Chờ admin duyệt",
   APPROVED: "Đã duyệt - chờ giải ngân",
   REJECTED: "Từ chối",
   ACTIVE: "Đang vay",
@@ -144,13 +144,18 @@ export default function Lending() {
         ) : (
           <div className="space-y-3 text-sm">
             <Badge tone={STATUS_TONE[result.loan.status]}>{STATUS_LABEL[result.loan.status]}</Badge>
+            <Alert tone="green">
+              Hồ sơ đã được gửi và đang chờ <strong>admin xét duyệt</strong>. Bạn sẽ thấy kết quả trong danh sách
+              khoản vay bên dưới ngay khi admin ra quyết định.
+            </Alert>
             <p className="text-gray-300">
-              Điểm tín dụng: <span className="font-semibold text-white">{result.creditScore}</span> / 850
+              Điểm tín dụng gợi ý: <span className="font-semibold text-white">{result.creditScore}</span> / 850
             </p>
-            <p className="text-gray-400">{result.offer.reason}</p>
+            <p className="text-gray-400">Nhận định của hệ thống chấm điểm: {result.offer.reason}</p>
             {result.offer.approved && (
               <p className="text-gray-300">
-                Hạn mức duyệt: {formatVND(result.offer.approvedAmount)} · Lãi suất {result.offer.interestRate}%/năm
+                Gợi ý duyệt: {formatVND(result.offer.approvedAmount)} · Lãi suất gợi ý {result.offer.interestRate}%/năm
+                (admin có thể điều chỉnh)
               </p>
             )}
             <Button

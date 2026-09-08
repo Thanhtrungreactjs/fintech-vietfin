@@ -89,6 +89,18 @@ export default function LoanDetail() {
             </div>
           )}
         </div>
+        {loan.status === "PENDING" && (
+          <div className="mt-4">
+            <Alert tone="green">
+              Hồ sơ đang chờ admin xét duyệt. Khoản vay chỉ được giải ngân sau khi có quyết định phê duyệt.
+            </Alert>
+          </div>
+        )}
+        {loan.status === "REJECTED" && loan.decisionNote && (
+          <div className="mt-4">
+            <Alert>Lý do từ chối: {loan.decisionNote}</Alert>
+          </div>
+        )}
         {error && (
           <div className="mt-4">
             <Alert>{error}</Alert>

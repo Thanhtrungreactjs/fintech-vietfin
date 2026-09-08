@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Wallet, HandCoins, ShieldCheck, Building2, PiggyBank, LineChart, LogOut, UserCircle, CheckCircle2 } from "lucide-react";
+import { LayoutDashboard, Wallet, HandCoins, ShieldCheck, Building2, PiggyBank, LineChart, ShieldAlert, LogOut, UserCircle, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { getSocket } from "../lib/socket";
 import { formatVND } from "../lib/format";
@@ -19,6 +19,10 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [toast, setToast] = useState(null);
+
+  const items = user?.isAdmin
+    ? [...navItems, { to: "/admin/lending", label: "Duyệt vay (Admin)", icon: ShieldAlert }]
+    : navItems;
 
   useEffect(() => {
     let cancelled = false;
@@ -56,7 +60,7 @@ export default function Layout() {
         </div>
 
         <nav className="flex-1 space-y-1">
-          {navItems.map((item) => (
+          {items.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

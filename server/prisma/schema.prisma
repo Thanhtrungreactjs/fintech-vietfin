@@ -20,6 +20,7 @@ model User {
   phone        String?
   role         String   @default("PERSONAL") // PERSONAL | BUSINESS
   kycStatus    String   @default("UNVERIFIED") // UNVERIFIED | PENDING | VERIFIED | REJECTED
+  isAdmin      Boolean  @default(false)
   createdAt    DateTime @default(now())
 
   kyc            KycDocument?
@@ -84,9 +85,10 @@ model LoanApplication {
   purpose       String
   termMonths    Int
   status        String   @default("PENDING") // PENDING | APPROVED | REJECTED | ACTIVE | CLOSED | DEFAULTED
-  creditScore   Int?
-  interestRate  Float? // annual %
+  creditScore   Int? // algorithm's suggested score, shown to the admin as decision support
+  interestRate  Float? // annual %, set by the admin at approval time (may differ from the suggested rate)
   decisionNote  String?
+  reviewedByAdminId String? // which admin approved/rejected this application
   createdAt     DateTime @default(now())
   decisionAt    DateTime?
   disbursedAt   DateTime?

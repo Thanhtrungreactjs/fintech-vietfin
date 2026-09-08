@@ -13,11 +13,20 @@ import Insurance from "./pages/Insurance";
 import PolicyDetail from "./pages/PolicyDetail";
 import Corporate from "./pages/Corporate";
 import Trading from "./pages/Trading";
+import AdminLending from "./pages/AdminLending";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-[#080b09] text-gray-400">Đang tải...</div>;
   if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
+
+function AdminRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="flex min-h-screen items-center justify-center bg-[#080b09] text-gray-400">Đang tải...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!user.isAdmin) return <Navigate to="/" replace />;
   return children;
 }
 
@@ -52,6 +61,14 @@ export default function App() {
             <Route path="insurance/:id" element={<PolicyDetail />} />
             <Route path="corporate" element={<Corporate />} />
             <Route path="trading" element={<Trading />} />
+            <Route
+              path="admin/lending"
+              element={
+                <AdminRoute>
+                  <AdminLending />
+                </AdminRoute>
+              }
+            />
             <Route path="profile" element={<Profile />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
