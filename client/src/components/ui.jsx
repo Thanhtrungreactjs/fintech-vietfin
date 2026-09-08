@@ -114,12 +114,14 @@ export function EmptyState({ message }) {
   return <div className="rounded-xl border border-dashed border-white/10 py-10 text-center text-sm text-gray-500">{message}</div>;
 }
 
-export function Modal({ open, onClose, title, children }) {
+const MODAL_SIZES = { md: "max-w-md", lg: "max-w-2xl", xl: "max-w-4xl" };
+
+export function Modal({ open, onClose, title, children, size = "md" }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0e1310] p-6 shadow-xl"
+        className={`max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-white/10 bg-[#0e1310] p-6 shadow-xl ${MODAL_SIZES[size]}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">

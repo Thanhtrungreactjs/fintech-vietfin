@@ -5,10 +5,16 @@ const { recordLedgerEntry } = require("../lib/ledger");
 
 const router = express.Router();
 
-function generateInvoiceNumber() {
-  const stamp = Date.now().toString(36).toUpperCase();
-  const rand = Math.floor(1000 + Math.random() * 9000);
-  return `INV-${stamp}-${rand}`;
+// Vietnamese e-invoice symbol convention: <mẫu số><hình thức>YY<ký hiệu riêng>,
+// e.g. "1C25TT" = mẫu số 1, có mã (C), năm 2025, ký hiệu "TT".
+function generateInvoiceSymbol() {
+  const year = String(new Date().getFullYear()).slice(-2);
+  return `1C${year}TT`;
+}
+
+async function nextInvoiceNumber(userId) {
+  const count = await prisma.invoice.count({ where: { userId } });
+  return `INV-${String(count + 1).padStart(6, "0")}`;
 }
 
 router.get("/invoices", requireAuth, async (req, res) => {
@@ -19,25 +25,70 @@ router.get("/invoices", requireAuth, async (req, res) => {
   });
   const invoices = await prisma.invoice.findMany({
     where: { userId: req.userId },
+    include: { items: true },
     orderBy: { issueDate: "desc" },
   });
   res.json({ invoices });
 });
 
+router.get("/invoices/:id", requireAuth, async (req, res) => {
+  const invoice = await prisma.invoice.findFirst({
+    where: { id: req.params.id, userId: req.userId },
+    include: { items: true },
+  });
+  if (!invoice) return res.status(404).json({ error: "Không tìm thấy hoá đơn" });
+  res.json({ invoice });
+});
+
 router.post("/invoices", requireAuth, async (req, res) => {
-  const { counterparty, amount, dueDate } = req.body;
-  if (!counterparty || !amount || amount <= 0 || !dueDate) {
+  const { counterparty, buyerTaxCode, buyerAddress, paymentMethod, vatRate, dueDate, note, items } = req.body;
+
+  if (!counterparty || !dueDate) {
     return res.status(400).json({ error: "Thiếu thông tin hoá đơn" });
   }
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: "Hoá đơn cần ít nhất một dòng hàng hoá/dịch vụ" });
+  }
+  for (const item of items) {
+    if (!item.name || !item.quantity || item.quantity <= 0 || item.unitPrice == null || item.unitPrice < 0) {
+      return res.status(400).json({ error: "Thông tin hàng hoá/dịch vụ không hợp lệ" });
+    }
+  }
+
+  // Totals are always derived from the line items server-side — never
+  // trusted from the client — so the invoice can't be tampered with to show
+  // a different total than what the line items actually add up to.
+  const normalizedItems = items.map((item) => ({
+    name: item.name,
+    unit: item.unit || "cái",
+    quantity: Number(item.quantity),
+    unitPrice: Number(item.unitPrice),
+    lineTotal: Math.round(Number(item.quantity) * Number(item.unitPrice)),
+  }));
+  const subtotal = normalizedItems.reduce((sum, i) => sum + i.lineTotal, 0);
+  const rate = vatRate != null ? Number(vatRate) : 10;
+  const vatAmount = Math.round(subtotal * (rate / 100));
+  const amount = subtotal + vatAmount;
+
   const invoice = await prisma.invoice.create({
     data: {
       userId: req.userId,
-      number: generateInvoiceNumber(),
+      symbol: generateInvoiceSymbol(),
+      number: await nextInvoiceNumber(req.userId),
       counterparty,
+      buyerTaxCode: buyerTaxCode || null,
+      buyerAddress: buyerAddress || null,
+      paymentMethod: paymentMethod === "CASH" ? "CASH" : "TRANSFER",
+      vatRate: rate,
+      subtotal,
+      vatAmount,
       amount,
+      note: note || null,
       dueDate: new Date(dueDate),
       status: "DRAFT",
+      items: { create: normalizedItems },
     },
+    include: { items: true },
   });
   res.status(201).json({ invoice });
 });

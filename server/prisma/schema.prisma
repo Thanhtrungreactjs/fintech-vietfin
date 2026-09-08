@@ -151,16 +151,37 @@ model InsuranceClaim {
 }
 
 model Invoice {
-  id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id])
-  number       String   @unique
-  counterparty String
-  amount       Float
-  status       String   @default("DRAFT") // DRAFT | SENT | PAID | OVERDUE
-  issueDate    DateTime @default(now())
-  dueDate      DateTime
-  paidAt       DateTime?
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  symbol        String // ký hiệu hoá đơn, VD: 1C25TT
+  number        String   @unique // số hoá đơn, VD: INV-000123
+  counterparty  String // tên đơn vị/khách hàng mua
+  buyerTaxCode  String?
+  buyerAddress  String?
+  paymentMethod String   @default("TRANSFER") // TRANSFER | CASH
+  vatRate       Float    @default(10) // % thuế GTGT áp dụng cho toàn bộ hoá đơn
+  subtotal      Float // tổng tiền hàng trước thuế (tổng thành tiền các dòng hàng hoá)
+  vatAmount     Float // tiền thuế GTGT = subtotal * vatRate / 100
+  amount        Float // tổng cộng thanh toán = subtotal + vatAmount
+  note          String?
+  status        String   @default("DRAFT") // DRAFT | SENT | PAID | OVERDUE
+  issueDate     DateTime @default(now())
+  dueDate       DateTime
+  paidAt        DateTime?
+
+  items InvoiceItem[]
+}
+
+model InvoiceItem {
+  id        String  @id @default(uuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  name      String // tên hàng hoá/dịch vụ
+  unit      String // đơn vị tính, VD: cái, giờ, tháng
+  quantity  Float
+  unitPrice Float
+  lineTotal Float // quantity * unitPrice
 }
 
 model LedgerEntry {
