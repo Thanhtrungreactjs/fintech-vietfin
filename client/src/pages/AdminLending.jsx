@@ -114,7 +114,7 @@ export default function AdminLending() {
                         <img
                           src={BANKS.find((b) => b.code === loan.disbursementBank)?.logo}
                           alt={loan.disbursementBankName}
-                          className="h-4 w-4 rounded bg-white object-contain p-0.5"
+                          className="h-7 w-7 rounded bg-white object-contain p-1"
                         />
                         Giải ngân về {loan.disbursementBankName} · {loan.disbursementAccountNumber}
                       </p>

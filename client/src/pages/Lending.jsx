@@ -114,7 +114,7 @@ export default function Lending() {
                     <img
                       src={BANKS.find((b) => b.code === loan.disbursementBank)?.logo}
                       alt={loan.disbursementBankName}
-                      className="h-8 w-8 shrink-0 rounded-lg bg-white object-contain p-1"
+                      className="h-11 w-11 shrink-0 rounded-lg bg-white object-contain p-1.5"
                     />
                   )}
                   <div>
@@ -177,8 +177,8 @@ export default function Lending() {
                         <Check size={10} className="text-black" />
                       </span>
                     )}
-                    <img src={bank.logo} alt={bank.name} className="h-8 w-8 rounded-lg bg-white object-contain p-1" />
-                    <span className="text-center text-[11px] leading-tight text-gray-300">{bank.name}</span>
+                    <img src={bank.logo} alt={bank.name} className="h-14 w-14 rounded-lg bg-white object-contain p-2" />
+                    <span className="text-center text-sm leading-tight text-gray-300">{bank.name}</span>
                   </button>
                 ))}
               </div>

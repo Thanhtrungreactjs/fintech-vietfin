@@ -113,12 +113,18 @@ model LoanRepaymentSchedule {
 }
 
 model InsurancePlan {
-  id          String   @id @default(uuid())
-  code        String   @unique
-  name        String
-  category    String // HEALTH | VEHICLE | HOME | TRAVEL
-  baseRate    Float // % of sum insured per year
-  description String?
+  id            String   @id @default(uuid())
+  code          String   @unique
+  name          String // real, actually-marketed product name
+  insurer       String // real insurance company underwriting this product
+  insurerLogo   String? // company logo URL
+  category      String // HEALTH | VEHICLE | HOME | TRAVEL | LIFE
+  baseRate      Float // % of sum insured per year
+  description   String?
+  highlights    String? // JSON array of coverage highlight bullets
+  termMonths    Int      @default(12)
+  minSumInsured Float?
+  maxSumInsured Float?
 
   policies InsurancePolicy[]
 }

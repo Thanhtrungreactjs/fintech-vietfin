@@ -96,7 +96,7 @@ export default function LoanDetail() {
                 <img
                   src={BANKS.find((b) => b.code === loan.disbursementBank)?.logo}
                   alt={loan.disbursementBankName}
-                  className="h-5 w-5 rounded bg-white object-contain p-0.5"
+                  className="h-8 w-8 rounded bg-white object-contain p-1"
                 />
                 {loan.disbursementBankName} · {loan.disbursementAccountNumber}
               </p>
